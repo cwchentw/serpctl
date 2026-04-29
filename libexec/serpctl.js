@@ -1,15 +1,16 @@
 import clipboard from 'clipboardy';
 
-const PROGRAM = 'serpctl'
+const PROGRAM = 'serpctl';
 const VERSION = '0.1';
-const SCRIPT_FILE = 'serpctl.js';
 
 function helpInfo ({ stream = 'stdout' } = {}) {
-    const log = ('stderr' === stream) ? console.error : console.log;
+    const log = (stream === 'stderr') ? console.error : console.log;
 
-    log(`Usage: ${PROGRAM} [option] keyword_1 keyword_2 keyword_3 ...`);
+    log(`Usage: ${PROGRAM} [options] keyword_1 keyword_2 keyword_3 ...`);
     log('');
-    log('Option:');
+    log('Options must appear before keywords.');
+    log('');
+    log('Options:');
     log('');
     log("\t-v, --version\t\tShow version info");
     log("\t-h, --help\t\tShow help info");
@@ -28,82 +29,94 @@ function buildGoogleSearchURL (keyword, params = {}) {
     return `${baseURL}?${searchParams.toString()}`;
 }
 
-/* Node.js CLI mode. */
-if ('undefined' !== typeof process
-    && process.argv.length >= 2
-    && process.argv[1].includes(SCRIPT_FILE))
-{
-    let args = process.argv.slice(2);
-
-    if (args.length <= 0) {
-        helpInfo({stream: 'stderr'});
-        process.exit(1);
+function validateOptionValue (value, name) {
+    if (typeof value === 'undefined') {
+        throw new Error(`No ${name}`);
     }
 
+    if (value.startsWith('-')) {
+        throw new Error(`Wrong parameter: ${value}`);
+    }
+
+    return value;
+}
+
+function parseArgs (args) {
     let hl = 'en-US';
     let gl = 'us';
-    let keyword;
 
-    while (args.length > 0) {
-        let arg = args[0];
+    let i = 0;
 
-        if ('-v' === arg || '--version' === arg) {
+    while (i < args.length) {
+        const arg = args[i];
+
+        if (arg === '-v' || arg === '--version') {
+            return { action: 'version' };
+        }
+
+        if (arg === '-h' || arg === '--help') {
+            return { action: 'help' };
+        }
+
+        if (arg === '-hl' || arg === '--host-language') {
+            hl = validateOptionValue(args[i + 1], 'Host Language');
+            i += 2;
+            continue;
+        }
+
+        if (arg === '-gl' || arg === '--geolocation') {
+            gl = validateOptionValue(args[i + 1], 'Geolocation');
+            i += 2;
+            continue;
+        }
+
+        const keyword = args.slice(i).join(' ');
+
+        return {
+            action: 'search',
+            keyword,
+            hl,
+            gl,
+        };
+    }
+
+    throw new Error('No keyword');
+}
+
+function main (argv) {
+    try {
+        const result = parseArgs(argv);
+
+        if (result.action === 'version') {
             console.log(VERSION);
-            process.exit(0);
+            return 0;
         }
-        else if ('-h' === arg || '--help' === arg) {
+
+        if (result.action === 'help') {
             helpInfo();
-            process.exit(0);
+            return 0;
         }
-        else if ('-hl' === arg || '--host-language' === arg) {
-            if ('undefined' == typeof args[1]) {
-                console.error("No Host Language");
-                process.exit(1);
-            }
 
-            hl = args[1];
-            args.shift();
-            args.shift();
-            continue;
-        }
-        else if ('-gl' === arg || '--geolocation' === arg) {
-            if ('undefined' == typeof args[1]) {
-                console.error("No Geolocation");
-                process.exit(1);
-            }
+        const searchURL = buildGoogleSearchURL(result.keyword, {
+            hl: result.hl,
+            gl: result.gl,
+            pws: '0',
+        });
 
-            gl = args[1];
-            args.shift();
-            args.shift();
-            continue;
-        }
-        else {
-            if (args.length > 1) {
-                keyword = args.join(' ');
-            }
-            else {
-                keyword = arg;
-            }
+        clipboard.writeSync(searchURL);
+        console.log(searchURL);
 
-            break;
-        }
+        return 0;
     }
-
-    if ('undefined' === typeof keyword) {
-        console.error("No keyword");
-        process.exit(1);
+    catch (error) {
+        console.error(error.message);
+        helpInfo({ stream: 'stderr' });
+        return 1;
     }
-    
-    const searchURL = buildGoogleSearchURL(keyword, {
-        hl: hl,
-        gl: gl,
-        pws: "0",
-    });
+}
 
-    clipboard.writeSync(searchURL);
-    console.log(searchURL);
-
-    process.exit(0);
+if (typeof process !== 'undefined' && process.argv) {
+    process.exit(main(process.argv.slice(2)));
 }
 
 export { buildGoogleSearchURL };
