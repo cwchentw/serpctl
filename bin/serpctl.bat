@@ -11,7 +11,7 @@ where node >nul || (
 rem Get the path of current batch script.
 set cwd=%~dp0
 rem Get the directory to our PHP script.
-set libexec=%cwd%..\libexec
+set libexec=%cwd%..\dist
 
 rem Run the PHP script and pass command-line arguments to it.
 node %libexec%\serpctl.js %*

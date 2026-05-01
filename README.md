@@ -11,6 +11,15 @@ making it easier to analyze SERP results without personalization bias.
 
 * A recent version of Node.js
 
+## Install
+
+```sh
+$ git clone https://github.com/cwchentw/serpctl.git
+$ cd serpctl
+$ npm install
+$ npm run build
+```
+
 ## Usage
 
 ```sh

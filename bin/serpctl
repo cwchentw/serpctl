@@ -12,7 +12,7 @@ fi
 cwd=$(dirname "$0")
 
 # Get the directory of our PHP script.
-libexec="${cwd}/../libexec"
+libexec="${cwd}/../dist"
 
 # Run the PHP script and pass command-line arguments to it.
 exec node "${libexec}/serpctl.js" "$@"
