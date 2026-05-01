@@ -3,7 +3,7 @@ import clipboard from 'clipboardy';
 const PROGRAM = 'serpctl';
 const VERSION = '0.1';
 
-function helpInfo ({ stream = 'stdout' } = {}) {
+function helpInfo({ stream = 'stdout' }: { stream?: 'stdout' | 'stderr' } = {}) {
     const log = (stream === 'stderr') ? console.error : console.log;
 
     log(`Usage: ${PROGRAM} [options] keyword_1 keyword_2 keyword_3 ...`);
@@ -18,7 +18,10 @@ function helpInfo ({ stream = 'stdout' } = {}) {
     log("\t-gl, --geolocation\tSet Geolocation");
 }
 
-function buildGoogleSearchURL (keyword, params = {}) {
+function buildGoogleSearchURL(
+    keyword: string,
+    params: Record<string, string> = {}
+): string {
     const baseURL = 'https://www.google.com/search';
 
     const searchParams = new URLSearchParams({
@@ -29,7 +32,7 @@ function buildGoogleSearchURL (keyword, params = {}) {
     return `${baseURL}?${searchParams.toString()}`;
 }
 
-function validateOptionValue (value, name) {
+function validateOptionValue(value: string | undefined, name: string): string {
     if (typeof value === 'undefined') {
         throw new Error(`No ${name}`);
     }
@@ -41,7 +44,20 @@ function validateOptionValue (value, name) {
     return value;
 }
 
-function parseArgs (args) {
+interface ActionBase {
+    action: 'version' | 'help';
+}
+
+interface ActionSearch {
+    action: 'search';
+    keyword: string;
+    hl: string;
+    gl: string;
+}
+
+type Argument = ActionBase | ActionSearch;
+
+function parseArgs(args: string[]): Argument {
     let hl = 'en-US';
     let gl = 'us';
 
@@ -83,7 +99,7 @@ function parseArgs (args) {
     throw new Error('No keyword');
 }
 
-function main (argv) {
+function main(argv: string[]): number {
     try {
         const result = parseArgs(argv);
 
@@ -97,19 +113,26 @@ function main (argv) {
             return 0;
         }
 
-        const searchURL = buildGoogleSearchURL(result.keyword, {
-            hl: result.hl,
-            gl: result.gl,
-            pws: '0',
-        });
+        if (result.action === 'search') {
+            const searchURL = buildGoogleSearchURL(result.keyword, {
+                hl: result.hl,
+                gl: result.gl,
+                pws: '0',
+            });
 
-        clipboard.writeSync(searchURL);
-        console.log(searchURL);
+            clipboard.writeSync(searchURL);
+            console.log(searchURL);
+            return 0;
+        }
 
         return 0;
     }
     catch (error) {
-        console.error(error.message);
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(String(error));
+        }
         helpInfo({ stream: 'stderr' });
         return 1;
     }
