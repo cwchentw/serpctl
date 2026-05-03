@@ -18,6 +18,7 @@ $ git clone https://github.com/cwchentw/serpctl.git
 $ cd serpctl
 $ npm install
 $ npm run build
+$ npm link
 ```
 
 ## Usage

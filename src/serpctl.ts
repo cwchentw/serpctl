@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import clipboard from 'clipboardy';
 
 const PROGRAM = 'serpctl';

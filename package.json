@@ -1,8 +1,12 @@
 {
+  "name": "serpctl",
   "type": "module",
+  "bin": {
+    "serpctl": "./dist/serpctl.js"
+  },
   "scripts": {
     "build": "tsc",
-    "prepublishOnly": "npm run build"
+    "prepare": "npm run build"
   },
   "dependencies": {
     "clipboardy": "^5.3.1"
